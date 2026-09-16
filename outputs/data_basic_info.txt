@@ -1,0 +1,151 @@
+﻿읽은 파일: C:\Users\노랑털뭉치\Documents\GitHub\inje-wildfire-weather-analysis\data\raw\inje_asos_211_daily_20250901_20260831.csv
+
+[1] 데이터 크기: 365행 × 62열
+
+[2] 컬럼 이름과 자료형
+tm                    str
+stnId               int64
+stnNm                 str
+avgTa             float64
+minTa             float64
+maxTa             float64
+sumRn             float64
+avgWs             float64
+maxWs             float64
+maxWsWd             int64
+maxInsWs          float64
+maxInsWsWd          int64
+avgRhm            float64
+minRhm              int64
+minRhmHrmt          int64
+avgCm10Te         float64
+avgCm20Te         float64
+avgCm30Te         float64
+avgCm5Te          float64
+avgLmac           float64
+avgM05Te          float64
+avgM10Te          float64
+avgM15Te          float64
+avgM30Te          float64
+avgM50Te          float64
+avgPa             float64
+avgPs             float64
+avgPv             float64
+avgTca            float64
+avgTd             float64
+avgTs             float64
+ddMefs            float64
+ddMefsHrmt        float64
+ddMes             float64
+ddMesHrmt         float64
+hr1MaxIcsr        float64
+hr1MaxIcsrHrmt    float64
+hr1MaxRn          float64
+hr1MaxRnHrmt      float64
+hr24SumRws          int64
+iscs              float64
+maxInsWsHrmt        int64
+maxPs             float64
+maxPsHrmt           int64
+maxTaHrmt           int64
+maxWd               int64
+maxWsHrmt           int64
+mi10MaxRn         float64
+mi10MaxRnHrmt     float64
+minPs             float64
+minPsHrmt           int64
+minTaHrmt           int64
+minTg             float64
+n99Rn             float64
+ssDur             float64
+sumDpthFhsc       float64
+sumFogDur         float64
+sumGsr            float64
+sumLrgEv          float64
+sumRnDur          float64
+sumSmlEv          float64
+sumSsHr           float64
+
+[3] 앞 5개 데이터
+        tm  stnId stnNm  avgTa  minTa  maxTa  sumRn  avgWs  maxWs  maxWsWd  maxInsWs  maxInsWsWd  avgRhm  minRhm  minRhmHrmt  avgCm10Te  avgCm20Te  avgCm30Te  avgCm5Te  avgLmac  avgM05Te  avgM10Te  avgM15Te  avgM30Te  avgM50Te  avgPa  avgPs  avgPv  avgTca  avgTd  avgTs  ddMefs  ddMefsHrmt  ddMes  ddMesHrmt  hr1MaxIcsr  hr1MaxIcsrHrmt  hr1MaxRn  hr1MaxRnHrmt  hr24SumRws  iscs  maxInsWsHrmt  maxPs  maxPsHrmt  maxTaHrmt  maxWd  maxWsHrmt  mi10MaxRn  mi10MaxRnHrmt  minPs  minPsHrmt  minTaHrmt  minTg  n99Rn  ssDur  sumDpthFhsc  sumFogDur  sumGsr  sumLrgEv  sumRnDur  sumSmlEv  sumSsHr
+2025-09-01    211    인제   25.0   22.3   27.8   36.2    1.9    4.3      180       9.6         320    85.1      74        1152        NaN        NaN        NaN       NaN      5.0       NaN       NaN       NaN       NaN       NaN  982.8 1005.5   26.6     8.5   22.1   26.0     NaN         NaN    NaN        NaN         NaN             NaN      29.6        1850.0        1625   NaN          1853 1007.6          3       1149    200       1026       15.3         1853.0 1003.2       1557       2400   21.7    NaN   13.0          NaN        NaN     NaN       NaN       NaN       NaN      0.3
+2025-09-02    211    인제   23.9   19.9   29.6    NaN    0.9    2.6      250       4.4         200    80.4      49        1530        NaN        NaN        NaN       NaN      1.4       NaN       NaN       NaN       NaN       NaN  986.6 1009.5   23.2     2.9   19.9   27.9     NaN         NaN    NaN        NaN         NaN             NaN       NaN           NaN         772   NaN          1324 1012.8       2354       1529    360       1451        NaN            NaN 1006.8         41       2337   17.9    NaN   13.0          NaN        NaN     NaN       NaN       NaN       NaN      7.6
+2025-09-03    211    인제   24.2   19.4   31.2    NaN    1.5    3.4       50       6.3         360    77.1      47        1310        NaN        NaN        NaN       NaN      2.5       NaN       NaN       NaN       NaN       NaN  989.4 1012.4   22.6     5.5   19.5   27.0     NaN         NaN    NaN        NaN         NaN             NaN       NaN           NaN        1313   NaN          1456 1014.3        753       1426     50       1418        NaN            NaN 1009.6       1524         49   17.7    NaN   12.9          NaN        NaN     NaN       NaN       NaN       NaN      7.0
+2025-09-04    211    인제   21.4   19.2   26.2   43.1    1.7    3.6       50       7.2          20    88.3      70        1554        NaN        NaN        NaN       NaN      4.5       NaN       NaN       NaN       NaN       NaN  989.2 1012.4   22.3     7.5   19.3   24.1     NaN         NaN    NaN        NaN         NaN             NaN      21.5         636.0        1477   NaN          1427 1014.5        944       1552     50       1337        6.2          638.0 1010.4       1541       2354   18.0    NaN   12.9          NaN        NaN     NaN       NaN       NaN       NaN      1.6
+2025-09-05    211    인제   23.8   17.9   31.4    NaN    0.9    2.5       50       4.5          20    80.1      50        1546        NaN        NaN        NaN       NaN      1.8       NaN       NaN       NaN       NaN       NaN  987.9 1010.9   23.1     3.4   19.8   26.9     NaN         NaN    NaN        NaN         NaN             NaN       NaN           NaN         810   NaN           101 1012.9        803       1546    180          2        NaN            NaN 1008.5       1453        553   16.1    NaN   12.9          NaN        NaN     NaN       NaN       NaN       NaN      9.3
+
+[4] 날짜 범위
+최소 날짜: 2025-09-01 00:00:00
+최대 날짜: 2026-08-31 00:00:00
+날짜 변환 실패 또는 결측: 0
+중복 날짜: 0
+기간 내 누락 날짜 수: 0
+
+[5] 컬럼별 결측치 개수
+tm                  0
+stnId               0
+stnNm               0
+avgTa               0
+minTa               0
+maxTa               0
+sumRn             219
+avgWs               0
+maxWs               0
+maxWsWd             0
+maxInsWs            0
+maxInsWsWd          0
+avgRhm              0
+minRhm              0
+minRhmHrmt          0
+avgCm10Te         365
+avgCm20Te         365
+avgCm30Te         365
+avgCm5Te          365
+avgLmac             0
+avgM05Te          365
+avgM10Te          365
+avgM15Te          365
+avgM30Te          365
+avgM50Te          365
+avgPa               0
+avgPs               0
+avgPv               0
+avgTca              0
+avgTd               0
+avgTs               0
+ddMefs            365
+ddMefsHrmt        365
+ddMes             365
+ddMesHrmt         365
+hr1MaxIcsr        365
+hr1MaxIcsrHrmt    365
+hr1MaxRn          265
+hr1MaxRnHrmt      289
+hr24SumRws          0
+iscs              365
+maxInsWsHrmt        0
+maxPs               0
+maxPsHrmt           0
+maxTaHrmt           0
+maxWd               0
+maxWsHrmt           0
+mi10MaxRn         265
+mi10MaxRnHrmt     295
+minPs               0
+minPsHrmt           0
+minTaHrmt           0
+minTg               0
+n99Rn             365
+ssDur               0
+sumDpthFhsc       365
+sumFogDur         365
+sumGsr            365
+sumLrgEv          365
+sumRnDur          365
+sumSmlEv          365
+sumSsHr             1
+전체가 비어 있는 컬럼: ['avgCm10Te', 'avgCm20Te', 'avgCm30Te', 'avgCm5Te', 'avgM05Te', 'avgM10Te', 'avgM15Te', 'avgM30Te', 'avgM50Te', 'ddMefs', 'ddMefsHrmt', 'ddMes', 'ddMesHrmt', 'hr1MaxIcsr', 'hr1MaxIcsrHrmt', 'iscs', 'n99Rn', 'sumDpthFhsc', 'sumFogDur', 'sumGsr', 'sumLrgEv', 'sumRnDur', 'sumSmlEv']
+
+[6] 중복 행 개수: 0
+
+강수량(sumRn)의 결측치는 의미 확인 전까지 0으로 바꾸지 않습니다.
