@@ -1,0 +1,153 @@
+"""풍속·습도 분석용 표를 만들고 상대적으로 건조한 기간을 분석한다."""
+from pathlib import Path
+import hashlib
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / 'data/raw/inje_asos_211_daily_20250901_20260831.csv'
+COLUMNS = {
+    'tm': '날짜', 'avgWs': '평균풍속', 'maxWs': '최대풍속',
+    'maxInsWs': '최대순간풍속', 'avgRhm': '평균습도', 'minRhm': '최소습도',
+}
+
+
+def markdown_table(frame):
+    """추가 패키지 없이 보고서 표를 만든다."""
+    def fmt(value):
+        return f'{value:.2f}' if isinstance(value, float) else str(value)
+    rows = ['| ' + ' | '.join(frame.columns) + ' |',
+            '| ' + ' | '.join(['---'] * len(frame.columns)) + ' |']
+    rows.extend('| ' + ' | '.join(fmt(v) for v in row) + ' |'
+                for row in frame.itertuples(index=False, name=None))
+    return '\n'.join(rows)
+
+
+def main():
+    digest = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
+    raw = pd.read_csv(SOURCE, encoding='utf-8-sig')
+    analysis = raw[list(COLUMNS)].rename(columns=COLUMNS).copy()
+    dates = pd.to_datetime(analysis['날짜'], format='%Y-%m-%d', errors='raise')
+    if analysis.isna().any().any() or dates.duplicated().any():
+        raise ValueError('분석용 핵심 열의 빈값 또는 중복 날짜를 먼저 확인하세요.')
+    if len(pd.date_range(dates.min(), dates.max()).difference(dates)):
+        raise ValueError('연속 기간 분석 전 누락 날짜를 확인하세요.')
+    analysis = analysis.sort_values('날짜').reset_index(drop=True)
+    assert len(analysis) == len(raw)
+    # 분석용 표에는 원래 값만 담고, 판정 결과는 별도 표로 저장한다.
+    threshold = analysis['평균습도'].quantile(.25)
+    daily = analysis.copy()
+    daily['월'] = daily['날짜'].str[:7]
+    daily['저습도후보'] = daily['평균습도'].le(threshold)
+    monthly = daily.groupby('월', as_index=False).agg(
+        관측일수=('날짜','size'), 평균습도_월평균=('평균습도','mean'),
+        평균습도_중앙값=('평균습도','median'), 최소습도_월평균=('최소습도','mean'),
+        저습도후보일수=('저습도후보','sum'))
+    monthly['저습도후보비율_pct'] = monthly['저습도후보일수'] / monthly['관측일수'] * 100
+    sensitivity = monthly[['월','관측일수']].copy()
+    thresholds = []
+    for quantile in [.2,.25,.3]:
+        limit = analysis['평균습도'].quantile(quantile)
+        name = f'하위{int(quantile*100)}pct'
+        count = daily.assign(flag=daily['평균습도'].le(limit)).groupby('월').flag.sum()
+        sensitivity[name+'_일수'] = sensitivity['월'].map(count)
+        sensitivity[name+'_비율'] = sensitivity[name+'_일수']/sensitivity['관측일수']*100
+        thresholds.append(f'하위 {int(quantile*100)}%: 평균습도 {limit:.2f}% 이하')
+    # 날짜 누락이 없음을 위에서 확인했으므로, 연속 True 구간을 연속일로 센다.
+    groups = daily['저습도후보'].ne(daily['저습도후보'].shift()).cumsum()
+    runs = daily[daily['저습도후보']].groupby(groups).agg(
+        시작일=('날짜','min'), 종료일=('날짜','max'), 연속일수=('날짜','size'),
+        기간평균습도=('평균습도','mean')).sort_values(['연속일수','시작일'],ascending=[False,True]).reset_index(drop=True)
+    selected = daily[daily['저습도후보']]
+    total = len(selected)
+    jan_apr = selected['날짜'].between('2026-01-01','2026-04-30').sum()
+    lowest = monthly.sort_values('평균습도_월평균').iloc[0]
+    highest = monthly.sort_values('저습도후보비율_pct',ascending=False).iloc[0]
+    out = ROOT/'outputs'
+    processed = ROOT/'data/processed'
+    out.mkdir(exist_ok=True)
+    processed.mkdir(parents=True,exist_ok=True)
+    analysis.to_csv(processed/'wind_humidity_daily.csv',index=False,encoding='utf-8-sig')
+    for name, frame in [
+        ('low_humidity_monthly.csv',monthly),
+        ('low_humidity_days.csv',selected.drop(columns='월')),
+        ('low_humidity_runs.csv',runs),
+        ('low_humidity_sensitivity.csv',sensitivity),
+    ]:
+        frame.to_csv(out/name,index=False,encoding='utf-8-sig')
+    report = f'''# 인제군 산불 위험 기상 조건 시계열 분석
+
+## 분석 범위
+
+인제 ASOS(211)의 2025-09-01~2026-08-31 일자료를 사용했다. 이번 보고서는 첫 질문인 “저습도 기간은 언제 집중되는가?”를 다룬다. 강풍 및 저습도·강풍 동시 발생 분석은 아직 수행하지 않았다.
+
+## 데이터 점검과 분석용 표
+
+원본 데이터는 365일 62개 열로 구성되며 날짜 누락과 중복은 없었다. 풍속·습도 핵심 변수에는 결측치가 없어 원값을 사용했다. 전 기간 빈값인 비핵심 변수와 빈값 의미가 확인되지 않은 강수량 변수는 이번 분석에서 제외했다. 극단적 풍속·습도 값은 분석 목적상 이상치로 삭제하지 않았다.
+
+분석용 표는 `data/processed/wind_humidity_daily.csv`에 저장했다. {len(analysis)}행, 6개 열이며, 날짜 / 평균풍속 / 최대풍속 / 최대순간풍속 / 평균습도 / 최소습도로 구성된다. 풍속 단위는 m/s, 습도 단위는 %다. 최소습도는 원본 minRhm(일최저 상대습도)이다.
+
+4월 23일 일조시간은 빈값으로 유지하며, 북춘천 값은 참고용이다. 보간이나 대체는 수행하지 않았다.
+
+## 저습도 탐색 기준
+
+본 자료의 일평균 상대습도 하위 25%에 해당하는 **{threshold:.1f}% 이하**를 “저습도 후보일”로 정의했다. 이 기준은 이번 1년 자료 안에서 상대적으로 건조한 날을 찾기 위한 탐색 기준이며, 기상청의 건조특보·공식 위험 기준이나 데이터 오류 기준이 아니다. 일최저습도는 보조 지표로 월평균을 제시했다.
+
+분위수는 pandas 기본 선형 보간으로 계산하고 경계값과 같은 날도 포함했다. 따라서 후보일은 정확히 25%가 아닐 수 있다. 월별 날짜 수가 달라 일수와 비율을 함께 비교했다.
+
+## 월별 결과
+
+{markdown_table(monthly)}
+
+후보일은 전체 **{total}일({total/len(analysis)*100:.1f}%)**이었다. 그중 **{jan_apr}일({jan_apr/total*100:.1f}%)이 2026년 1~4월**에 있었다.
+
+후보일 비율이 가장 높은 달은 **{highest['월']}({highest['저습도후보일수']}일, {highest['저습도후보비율_pct']:.1f}%)**이다. 월평균 상대습도가 가장 낮은 달도 **{lowest['월']}({lowest['평균습도_월평균']:.2f}%)**이다. 1월과 4월은 후보일수가 각각 18일로 같지만, 4월은 30일이므로 비율이 더 높다.
+
+따라서 이 관측기간에서는 상대적으로 건조한 날이 겨울부터 봄, 특히 1월과 4월에 집중됐다. 2025년 9월과 2026년 6~8월에는 이 기준에 해당하는 날이 없었다. 이는 해당 달에 순간적인 건조나 산불 위험이 전혀 없었다는 뜻은 아니다.
+
+## 연속 저습도 후보 기간
+
+아래는 연속일수가 긴 상위 5개 구간이다. 날짜가 연속하며 매일 기준을 만족하는 경우만 묶었다.
+
+{markdown_table(runs.head(5))}
+
+## 기준을 바꿨을 때
+
+{'; '.join(thresholds)}로 비교했다.
+
+{markdown_table(sensitivity)}
+
+하위 20%, 25%, 30% 기준 모두 1월과 4월이 후보일 비율 상위 두 달이었다. 다만 20%·25% 기준에서는 4월이, 30% 기준에서는 1월이 1위였다. 따라서 한 달을 절대적인 최다 건조월로 단정하기보다 **1월과 4월에 집중된다는 결론**이 더 안정적이다.
+
+## 해석의 범위와 다음 단계
+
+단일 관측소의 1년 결과이므로 인제의 장기적인 기후 특성이나 다른 연도까지 일반화할 수 없다. 일평균습도는 하루 중 짧은 저습도 상황을 가릴 수 있다. 이번 결과만으로 실제 산불 발생이나 위험을 예측했다고 볼 수 없다.
+
+다음 단계에서는 같은 분석용 표로 강풍 기간을 분석하고, 저습도와 강풍이 동시에 나타난 날짜를 비교한다. 강풍의 탐색 기준 역시 공식 위험 기준과 구분해 명시한다.
+
+## 출처와 재현
+
+- 원본: `data/raw/{SOURCE.name}`
+- 원본 SHA256: `{digest}`
+- [기상청 ASOS 자료 설명](https://data.kma.go.kr/data/grnd/selectAsosRltmList.do?pgmNo=36&tabNo=2): 관측자료 및 제공 유의사항. 이 페이지가 위 분위수 기준을 제시한 것은 아니다.
+- 실행: `python scripts/analyze_low_humidity.py` (pandas 필요)
+- 상세 품질 점검: `outputs/data_quality_review.txt`
+- 월별 결과: `outputs/low_humidity_monthly.csv`
+- 후보일 목록: `outputs/low_humidity_days.csv`
+- 연속 기간: `outputs/low_humidity_runs.csv`
+- 기준별 비교: `outputs/low_humidity_sensitivity.csv`
+'''
+    (ROOT/'REPORT.md').write_text(report,encoding='utf-8')
+    assert digest == hashlib.sha256(SOURCE.read_bytes()).hexdigest()
+    # 저장된 표가 요청한 6개 열과 모든 날짜·원값을 보존하는지 확인한다.
+    saved = pd.read_csv(processed/'wind_humidity_daily.csv')
+    pd.testing.assert_frame_equal(saved,analysis)
+    assert int(monthly['관측일수'].sum()) == len(analysis)
+    assert int(monthly['저습도후보일수'].sum()) == int(runs['연속일수'].sum()) == total
+    print(f'분석용 표: {len(saved)}행 × {len(saved.columns)}열, 원본 값 보존 확인')
+    print(f'기준: {threshold:.1f}%, 후보 {total}일, 1~4월 {jan_apr}일')
+    print(runs.head(5).to_string(index=False))
+    print('REPORT.md 및 월별·후보일·연속기간·기준별 결과 저장 완료')
+
+
+if __name__ == '__main__':
+    main()
