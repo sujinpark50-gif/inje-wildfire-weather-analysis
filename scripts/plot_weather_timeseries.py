@@ -95,6 +95,8 @@ def main():
 그림 파일: `outputs/weather_timeseries.png`, `outputs/weather_timeseries.svg`.
 이 명령은 습도·강풍 분석을 재실행하고 보고서에 그래프를 추가한다.
 ''',encoding='utf-8')
+    from build_submission_report import build
+    build()
     print('시계열 그래프 PNG·SVG 및 REPORT.md 저장 완료')
 
 
